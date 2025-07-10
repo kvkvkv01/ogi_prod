@@ -5,11 +5,6 @@ body {
   font-family: Arial, sans-serif;
   padding: 20px;
 }
-
-p {
-  text-align: justify !important;
-}
-
 img {
   border: solid 2px #4e5053;
 }
@@ -24,6 +19,7 @@ h1, h2, #post, form {
   margin-right: auto;
   padding: 1em;
   margin-bottom: 10px;
+  text-align: justify !important;
 }
 
 #flex_content {
