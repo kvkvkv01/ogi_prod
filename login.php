@@ -18,9 +18,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $captcha = $_POST['captcha'] ?? '';
     if ($captcha === '' || !isset($_SESSION['captcha_answer']) || intval($captcha) !== $_SESSION['captcha_answer']) {
         $error = 'Captcha incorrect. Please try again.';
-        // Regenerate captcha
+        // Regenerate captcha immediately
         unset($_SESSION['captcha_answer']);
         unset($_SESSION['captcha_question']);
+        $a = rand(1, 9);
+        $b = rand(1, 9);
+        $_SESSION['captcha_question'] = "$a + $b = ?";
+        $_SESSION['captcha_answer'] = $a + $b;
     } else {
         $found = false;
         if (file_exists($users_file)) {
@@ -37,8 +41,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         $error = 'Invalid username or password.';
+        // Regenerate captcha immediately after failed login
         unset($_SESSION['captcha_answer']);
         unset($_SESSION['captcha_question']);
+        $a = rand(1, 9);
+        $b = rand(1, 9);
+        $_SESSION['captcha_question'] = "$a + $b = ?";
+        $_SESSION['captcha_answer'] = $a + $b;
     }
 }
 ?>
