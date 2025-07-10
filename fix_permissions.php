@@ -29,10 +29,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $results[] = "Created uploads directory for $blog_name";
             }
             
-            // Set permissions
-            chmod($blog, 0777);
-            chmod($posts_dir, 0777);
-            chmod($uploads_dir, 0777);
+            // Set permissions (ignore errors on shared hosting)
+            @chmod($blog, 0777);
+            @chmod($posts_dir, 0777);
+            @chmod($uploads_dir, 0777);
             
             $results[] = "Fixed permissions for $blog_name";
         }
