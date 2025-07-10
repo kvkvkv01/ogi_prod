@@ -6,6 +6,10 @@ body {
   padding: 20px;
 }
 
+p {
+  text-align: justify;
+}
+
 img {
   border: solid 2px #4e5053;
 }
