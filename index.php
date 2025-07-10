@@ -55,11 +55,15 @@ if (is_dir($blog_dir)) {
                 }
             }
             $blog_data['replies'] = $reply_count;
-            
+            $blog_data['activity_score'] = $blog_data['posts'] + $blog_data['images'] + $blog_data['replies'];
             $blogs[] = $blog_data;
         }
     }
 }
+// Sort blogs by activity_score descending
+usort($blogs, function($a, $b) {
+    return $b['activity_score'] <=> $a['activity_score'];
+});
 ?>
 <!DOCTYPE html>
 <html lang="en">
