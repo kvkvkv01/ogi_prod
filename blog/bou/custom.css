@@ -1,0 +1,21 @@
+body {
+  background-color: #ffffff;
+  background-image: none;
+  background-size: contain;
+  background-position: left top;
+  background-repeat: repeat;
+  color: #b3b8c3;
+  font-family: Arial, sans-serif;
+  padding: 20px;
+}
+
+h1, h2, #post, form {
+  font-size: 14px !important;
+  width: 555px;
+  background-color: #ffffff;
+  color: #4e5053;
+  border: solid 2px #4e5053;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1em;
+}
