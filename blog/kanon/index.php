@@ -288,14 +288,10 @@ foreach ($posts as $ts => $content):
           <span style="color:#aaa;"> <?= htmlspecialchars($dt) ?></span><br>
           <?= htmlspecialchars($reply_content) ?>
           <?php if (isset($_SESSION['user']) && ($_SESSION['user'] === basename($blog_dir) || $_SESSION['user'] === 'admin')): ?>
-            <form method="post">
+            <form method="post" style="border:unset; background-color: unset;">
               <input type="hidden" name="delete_reply" value="<?= htmlspecialchars(basename($rf)) ?>">
               <input type="hidden" name="delete_reply_ts" value="<?= htmlspecialchars($ts) ?>">
-<<<<<<< HEAD
-              <button type="submit" onclick="return confirm('Delete this reply?');" style="border: none !important; background-color: unset; color: red;">Delete</button>
-=======
-              <button type="submit" onclick="return confirm('Delete this reply?');" style="color:#c22;font-size:0.9em;border:none;background:none;padding:0;">Delete</button>
->>>>>>> parent of c547370 (Update index.php)
+              <button type="submit" onclick="return confirm('Delete this reply?');">Delete</button>
             </form>
           <?php endif; ?>
         </div>
