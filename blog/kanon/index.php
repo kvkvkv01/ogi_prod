@@ -198,16 +198,51 @@ foreach ($posts as $ts => $content):
     usort($reply_files, function($a, $b) { return filemtime($a) <=> filemtime($b); });
     $recent_replies = array_slice($reply_files, -3);
     $more_replies = count($reply_files) > 3;
+
+    // Captcha for reply
+    if (!isset($_SESSION['reply_captcha_'.$ts])) {
+        $a = rand(1, 9); $b = rand(1, 9);
+        $_SESSION['reply_captcha_'.$ts] = [$a, $b, $a+$b];
+    }
+    $captcha = $_SESSION['reply_captcha_'.$ts];
+
+    // Handle reply deletion
+    $reply_error = '';
+    if (isset($_POST['delete_reply']) && $_POST['delete_reply_ts'] == $ts) {
+        $del_file = $replies_dir . '/' . basename($_POST['delete_reply']);
+        $is_owner = (isset($_SESSION['user']) && $_SESSION['user'] === basename($blog_dir));
+        $is_admin = (isset($_SESSION['user']) && $_SESSION['user'] === 'admin');
+        if (($is_owner || $is_admin) && file_exists($del_file)) {
+            unlink($del_file);
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit;
+        }
+    }
+
     // Handle reply submission
     if (isset($_POST['reply_to']) && $_POST['reply_to'] == $ts && isset($_POST['reply_content'])) {
         $reply_content = trim($_POST['reply_content']);
-        if ($reply_content !== '') {
+        $reply_captcha = $_POST['reply_captcha'] ?? '';
+        $reply_captcha_answer = $_POST['reply_captcha_answer'] ?? '';
+        // Rate limit: 30s per user/IP/thread
+        $rate_key = 'last_reply_'.$ts;
+        $now = time();
+        $last = $_SESSION[$rate_key] ?? 0;
+        if ($now - $last < 30) {
+            $reply_error = 'You must wait 30 seconds between replies.';
+        } elseif (strlen($reply_content) > 2000) {
+            $reply_error = 'Reply too long (max 2000 characters).';
+        } elseif ($reply_captcha === '' || $reply_captcha_answer === '' || intval($reply_captcha) !== intval($reply_captcha_answer)) {
+            $reply_error = 'Captcha incorrect.';
+            unset($_SESSION['reply_captcha_'.$ts]);
+        } elseif ($reply_content !== '') {
             $reply_user = isset($_SESSION['user']) ? $_SESSION['user'] : 'VIPPER';
             $reply_time = time();
             $reply_file = $replies_dir . '/' . $reply_time . '_reply.txt';
             $reply_text = "User: $reply_user\nTime: $reply_time\nContent: " . str_replace("\n", " ", $reply_content) . "\n";
             file_put_contents($reply_file, $reply_text);
-            // Refresh to avoid resubmission
+            $_SESSION[$rate_key] = $now;
+            unset($_SESSION['reply_captcha_'.$ts]);
             header("Location: " . $_SERVER['PHP_SELF']);
             exit;
         }
@@ -252,6 +287,13 @@ foreach ($posts as $ts => $content):
           <span style="color:#789922;">[<?= htmlspecialchars($reply_user) ?>]</span>
           <span style="color:#aaa;"> <?= htmlspecialchars($dt) ?></span><br>
           <?= htmlspecialchars($reply_content) ?>
+          <?php if (isset($_SESSION['user']) && ($_SESSION['user'] === basename($blog_dir) || $_SESSION['user'] === 'admin')): ?>
+            <form method="post" style="display:inline;">
+              <input type="hidden" name="delete_reply" value="<?= htmlspecialchars(basename($rf)) ?>">
+              <input type="hidden" name="delete_reply_ts" value="<?= htmlspecialchars($ts) ?>">
+              <button type="submit" onclick="return confirm('Delete this reply?');" style="color:#c22;font-size:0.9em;">Delete</button>
+            </form>
+          <?php endif; ?>
         </div>
       <?php endforeach; ?>
       <?php if ($more_replies): ?>
@@ -260,8 +302,13 @@ foreach ($posts as $ts => $content):
       <!-- Reply button and form -->
       <button type="button" onclick="document.getElementById('replyform_<?= $ts ?>').style.display='block';this.style.display='none';" style="margin-top:0.5em;">Reply</button>
       <form id="replyform_<?= $ts ?>" method="post" style="display:none;margin-top:0.5em;width:80%;">
+        <?php if (!empty($reply_error)): ?><div style="color:red;"> <?= htmlspecialchars($reply_error) ?> </div><?php endif; ?>
         <input type="hidden" name="reply_to" value="<?= htmlspecialchars($ts) ?>">
-        <textarea name="reply_content" rows="2" style="width:98%;max-width:100%;box-sizing:border-box;resize:vertical;" required placeholder="Write a reply..."></textarea><br>
+        <textarea name="reply_content" rows="2" style="width:98%;max-width:100%;box-sizing:border-box;resize:vertical;" maxlength="2000" required placeholder="Write a reply... (max 2000 chars)"></textarea><br>
+        <label>Captcha: <b><?= htmlspecialchars($captcha[0]) ?> + <?= htmlspecialchars($captcha[1]) ?> = ?</b>
+          <input type="text" name="reply_captcha" required style="width:40px;">
+        </label>
+        <input type="hidden" name="reply_captcha_answer" value="<?= htmlspecialchars($captcha[2]) ?>">
         <button type="submit" style="margin-top:0.2em;">Reply</button>
       </form>
     </div>
