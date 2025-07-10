@@ -71,6 +71,13 @@ usort($blogs, function($a, $b) {
     <meta charset="utf-8">
     <title>Home</title>
     <link rel="stylesheet" type="text/css" href="css.css"/>
+    <?php if (isset($_SESSION['user'])): ?>
+      <?php 
+      $user_css = __DIR__ . '/blog/' . $_SESSION['user'] . '/custom.css';
+      if (file_exists($user_css)): ?>
+        <link rel="stylesheet" type="text/css" href="blog/<?= htmlspecialchars($_SESSION['user']) ?>/custom.css?v=<?= filemtime($user_css) ?>" />
+      <?php endif; ?>
+    <?php endif; ?>
     <style>
         .blog-table {
             width: 555px;
@@ -126,14 +133,8 @@ usort($blogs, function($a, $b) {
 
 <div style="font-size: 14px !important; width: 555px; background-color: white; color: #4e5053; border: solid 2px #4e5053; margin-left: auto; margin-right: auto; padding: 1em; margin-bottom: 10px;">
     <h1 style="font-size: inherit !important; width: auto !important; background-color: transparent !important; color: inherit !important; border: none !important; margin: 0 !important; padding: 0 !important; margin-bottom: 0 !important;">Welcome<?php if (isset($_SESSION['user'])) echo ', ' . htmlspecialchars($_SESSION['user']); ?>!</h1>
-    <p style="text-align: justify; margin: 20px 0; color: #4e5053; font-size: 1em;">
-        A minimalist imageboard platform where users can create and manage their own personal threads. 
-        Each blog supports text posts with optional image uploads, featuring a clean, imageboard-inspired design.
-        Due to safety concerns, replies are text-only.
-    </p>
-    <p style="text-align: justify; margin: 20px 0; color: #4e5053; font-size: 1em;">
-        You can use $ and $$ for Latex, [code][/code] for codeblocks and [jis][/jis] for Shift_JIS art. General Markdown formatting also applies.
-    </p>
+    <p style="text-align: left; margin: 20px 0; color: #4e5053; font-size: 1em;">
+    Samefagging is a minimalist social-media-as-imageboard platform where users can create and manage their own personal threads. Each blog supports text posts with optional image uploads, featuring a clean, imageboard-inspired design. Due to safety concerns, replies are text-only at least for the moment.</p>
 </div>
 
 <h2>Blogs</h2>
@@ -161,6 +162,33 @@ usort($blogs, function($a, $b) {
         </tbody>
     </table>
 <?php endif; ?>
+
+<h2>How to Use</h2>
+<div style="font-size: 14px !important; width: 555px; background-color: white; color: #4e5053; border: solid 2px #4e5053; margin-left: auto; margin-right: auto; padding: 1em; margin-bottom: 10px;">
+    <h3 style="margin-top: 0;">Text Formatting</h3>
+    <ul style="text-align: left; margin: 10px 0; color: #4e5053; font-size: 1em;">
+        <li><b>Bold:</b> <code>**text**</code> or <code>__text__</code></li>
+        <li><i>Italic:</i> <code>*text*</code> or <code>_text_</code></li>
+        <li><s>Strikethrough:</s> <code>~~text~~</code></li>
+        <li><span style="font-size:1.2em;">Heading:</span> <code># text</code> (at line start)</li>
+        <li>Spoiler: <code>||text||</code> (hover to reveal)</li>
+    </ul>
+    
+    <h3>Code & Special Content</h3>
+    <ul style="text-align: left; margin: 10px 0; color: #4e5053; font-size: 1em;">
+        <li>Code blocks: <code>[code]your code here[/code]</code></li>
+        <li>Shift_JIS art: <code>[jis]ｷﾀ━━━━━━(ﾟ∀ﾟ)━━━━━━!!!![/jis]</code></li>
+        <li>LaTeX inline: <code>$70^{\circ}$</code></li>
+        <li>LaTeX display: <code>$$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$</code></li>
+    </ul>
+    
+    <h3>Quotes & References</h3>
+    <ul style="text-align: left; margin: 10px 0; color: #4e5053; font-size: 1em;">
+        <li>greentext: <code>&gt; quoted text</code> (appears in green)</li>
+        <li>redtext: <code>&lt; referenced text</code> (appears in red)</li>
+    </ul>
+
+</div>
 
 </body>
 </html>
