@@ -92,6 +92,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (file_exists($edit_blog_src)) {
             copy($edit_blog_src, $edit_blog_dst);
         }
+        // Copy create_post.php to new blog
+        $create_post_src = __DIR__ . '/blog/kanon/create_post.php';
+        $create_post_dst = $blog_dir . '/create_post.php';
+        if (file_exists($create_post_src)) {
+            copy($create_post_src, $create_post_dst);
+        }
         $success = 'Account and blog created! You can now log in.';
     }
 }
