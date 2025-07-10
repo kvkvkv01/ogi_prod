@@ -122,7 +122,8 @@ if (!function_exists('format_post')) {
   function format_post($text) {
     // Escape HTML
     $text = htmlspecialchars($text);
-    
+    // Markdown formatting
+    $text = format_markdown($text);
     // Split out [jis] blocks first to preserve them exactly
     $parts = preg_split('/(\[jis\].*?\[\/jis\])/is', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
     $out = '';
@@ -147,14 +148,29 @@ if (!function_exists('format_post')) {
               } elseif (preg_match('/^&lt;.+/', $line)) {
                 $line = '<span style="color:#c22">' . $line . '</span>';
               }
-              $out .= $line;
-              if ($k < count($lines) - 1) $out .= "<br>";
+              $out .= nl2br($line);
             }
           }
         }
       }
     }
     return $out;
+  }
+  // Markdown formatting function
+  function format_markdown($text) {
+    // Spoiler: ||text||
+    $text = preg_replace('/\|\|(.+?)\|\|/s', '<span class="spoiler">$1</span>', $text);
+    // Bold: **text** or __text__
+    $text = preg_replace('/\*\*(.+?)\*\*/s', '<b>$1</b>', $text);
+    $text = preg_replace('/__(.+?)__/s', '<b>$1</b>', $text);
+    // Italic: *text* or _text_
+    $text = preg_replace('/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/s', '<i>$1</i>', $text);
+    $text = preg_replace('/(?<!_)_(?!_)(.+?)(?<!_)_(?!_)/s', '<i>$1</i>', $text);
+    // Strikethrough: ~~text~~
+    $text = preg_replace('/~~(.+?)~~/s', '<s>$1</s>', $text);
+    // Heading: # text (at line start)
+    $text = preg_replace('/^# (.+)$/m', '<span>$1</span>', $text);
+    return $text;
   }
 }
 
@@ -300,7 +316,7 @@ foreach ($posts as $ts => $content):
         <div style="border-left:2px solid #ccc;padding-left:1em;margin-bottom:0.5em;max-width:100%;word-break:break-word;">
           <span style="color:#789922;">[<?= htmlspecialchars($reply_user) ?>]</span>
           <span style="color:#aaa;"> <?= htmlspecialchars($dt) ?></span><br>
-          <?= htmlspecialchars($reply_content) ?>
+          <?= format_post($reply_content) ?>
           <?php if (isset($_SESSION['user']) && ($_SESSION['user'] === basename($blog_dir) || $_SESSION['user'] === 'admin')): ?>
             <form method="post" style="border:unset; background-color: unset;">
               <input type="hidden" name="delete_reply" value="<?= htmlspecialchars(basename($rf)) ?>">
@@ -330,6 +346,18 @@ foreach ($posts as $ts => $content):
 </div>
 <?php endforeach; ?>
 <?php endif; ?>
-
+<style>
+.spoiler {
+  background: #222;
+  color: #222;
+  border-radius: 2px;
+  padding: 0 2px;
+  cursor: pointer;
+}
+.spoiler:hover, .spoiler:active {
+  color: #fff;
+  transition: color 0.2s;
+}
+</style>
 </body>
 </html>

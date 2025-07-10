@@ -121,9 +121,13 @@ if (is_dir($blog_dir)) {
 
 <div style="font-size: 14px !important; width: 555px; background-color: white; color: #4e5053; border: solid 2px #4e5053; margin-left: auto; margin-right: auto; padding: 1em; margin-bottom: 10px;">
     <h1 style="font-size: inherit !important; width: auto !important; background-color: transparent !important; color: inherit !important; border: none !important; margin: 0 !important; padding: 0 !important; margin-bottom: 0 !important;">Welcome<?php if (isset($_SESSION['user'])) echo ', ' . htmlspecialchars($_SESSION['user']); ?>!</h1>
-    <p style="text-align: left; margin: 20px 0; color: #4e5053; font-size: 1em;">
-        A minimalist <a href="https://en.wikipedia.org/wiki/Zettelkasten" target="_blank">zettelkasten</a> platform where users can create and manage their own personal notes. 
+    <p style="text-align: justify; margin: 20px 0; color: #4e5053; font-size: 1em;">
+        A minimalist imageboard platform where users can create and manage their own personal threads. 
         Each blog supports text posts with optional image uploads, featuring a clean, imageboard-inspired design.
+        Due to safety concerns, replies are text-only.
+    </p>
+    <p style="text-align: justify; margin: 20px 0; color: #4e5053; font-size: 1em;">
+        You can use $ and $$ for Latex, [code][/code] for codeblocks and [jis][/jis] for Shift_JIS art. General Markdown formatting also applies.
     </p>
 </div>
 
