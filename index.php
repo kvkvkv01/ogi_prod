@@ -121,6 +121,7 @@ usort($blogs, function($a, $b) {
         <a href="login.php" style="color:#4e5053;text-decoration:none;font-size:1em;">login</a> |
         <a href="register.php" style="color:#4e5053;text-decoration:none;font-size:1em;">register</a>
     <?php endif; ?>
+    | <a href="timeline.php" style="color:#4e5053;text-decoration:none;font-size:1em;">timeline</a>
 </div>
 
 <div style="font-size: 14px !important; width: 555px; background-color: white; color: #4e5053; border: solid 2px #4e5053; margin-left: auto; margin-right: auto; padding: 1em; margin-bottom: 10px;">
