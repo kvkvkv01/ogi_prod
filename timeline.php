@@ -51,20 +51,51 @@ if (!function_exists('format_post')) {
   function format_post($text) {
     // Escape HTML
     $text = htmlspecialchars($text);
-    // Markdown formatting
-    $text = format_markdown($text);
-    // Split out [jis] blocks first to preserve them exactly
-    $parts = preg_split('/(\[jis\].*?\[\/jis\])/is', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
+    
+    // Split out [jis], [code], and [url] blocks first to preserve them exactly
+    $parts = preg_split('/(\[jis\].*?\[\/jis\]|\[code\].*?\[\/code\]|\[url\].*?\[\/url\])/is', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
     $out = '';
     for ($i = 0; $i < count($parts); $i++) {
-      if ($i % 2 == 1) { // [jis] content
-        $jis_content = $parts[$i];
-        // Remove the [jis] tags and wrap in pre
-        $jis_content = preg_replace('/^\[jis\](.*?)\[\/jis\]$/is', '$1', $jis_content);
-        $out .= '<pre style="font-family: \'MS Pgothic\', IPAMonaPGothic, Monapo, Mona, serif; font-size: 12px; line-height: 1.2; margin: 0; padding: 0; background: transparent; border: none; white-space: pre; display: inline-block; vertical-align: top;">' . $jis_content . '</pre>';
+      if ($i % 2 == 1) { // [jis], [code], or [url] content
+        $block_content = $parts[$i];
+        
+        // Handle [jis] blocks
+        if (preg_match('/^\[jis\](.*?)\[\/jis\]$/is', $block_content, $matches)) {
+          $jis_content = $matches[1];
+          $out .= '<pre style="font-family: \'MS Pgothic\', IPAMonaPGothic, Monapo, Mona, serif; font-size: 12px; line-height: 1.2; margin: 0; padding: 0; background: transparent; border: none; white-space: pre; display: inline-block; vertical-align: top;">' . $jis_content . '</pre>';
+        }
+        // Handle [code] blocks
+        elseif (preg_match('/^\[code\](.*?)\[\/code\]$/is', $block_content, $matches)) {
+          $code = trim($matches[1], "\r\n");
+          $out .= '<pre class="post_code">' . $code . '</pre>';
+        }
+        // Handle [url] blocks
+        elseif (preg_match('/^\[url\](.*?)\[\/url\]$/is', $block_content, $matches)) {
+          $url_content = $matches[1];
+          // Check if it's a URL or text with URL
+          if (preg_match('/^https?:\/\//i', $url_content)) {
+            // It's a URL, use it as both href and text
+            $out .= '<a href="' . $url_content . '" target="_blank" rel="noopener noreferrer">' . $url_content . '</a>';
+          } else {
+            // It's text, look for URL in the content
+            if (preg_match('/(https?:\/\/[^\s]+)/i', $url_content, $url_matches)) {
+              $url = $url_matches[1];
+              $text = str_replace($url, '', $url_content);
+              $text = trim($text);
+              if (empty($text)) $text = $url;
+              $out .= '<a href="' . $url . '" target="_blank" rel="noopener noreferrer">' . $text . '</a>';
+            } else {
+              // No URL found, just display the text
+              $out .= $url_content;
+            }
+          }
+        }
       } else { // normal text
-        // Split out code blocks
-        $code_parts = preg_split('/(```|\[code\])(.*?)(```|\[\/code\])/is', $parts[$i], -1, PREG_SPLIT_DELIM_CAPTURE);
+        // Apply markdown formatting to normal text
+        $text_part = format_markdown($parts[$i]);
+        
+        // Split out code blocks (```)
+        $code_parts = preg_split('/(```)(.*?)(```)/is', $text_part, -1, PREG_SPLIT_DELIM_CAPTURE);
         for ($j = 0; $j < count($code_parts); $j++) {
           if ($j % 4 == 2) { // code content
             $code = trim($code_parts[$j], "\r\n");
@@ -141,7 +172,34 @@ if (isset($_POST['reply_to']) && isset($_POST['reply_content'])) {
             $reply_user = isset($_SESSION['user']) ? $_SESSION['user'] : 'VIPPER';
             $reply_time = time();
             $reply_file = $replies_dir . '/' . $reply_time . '_reply.txt';
+            
+            // Handle image upload for logged-in users
+            $image_path = '';
+            if (isset($_SESSION['user']) && isset($_FILES['reply_image']) && $_FILES['reply_image']['error'] === UPLOAD_ERR_OK) {
+                $upload_dir = $blog_dir . '/uploads';
+                if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
+                
+                $file = $_FILES['reply_image'];
+                $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                $allowed_exts = ['jpg', 'jpeg', 'png', 'gif', 'webm', 'mp4'];
+                
+                if (in_array($ext, $allowed_exts) && $file['size'] <= 10485760) { // 10MB limit
+                    $image_name = $reply_time . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+                    $image_path = 'uploads/' . $image_name;
+                    
+                    if (move_uploaded_file($file['tmp_name'], $blog_dir . '/' . $image_path)) {
+                        // Image uploaded successfully
+                    } else {
+                        $image_path = '';
+                    }
+                }
+            }
+            
             $reply_text = "User: $reply_user\nTime: $reply_time\nContent: " . str_replace("\n", " ", $reply_content) . "\n";
+            if ($image_path) {
+                $reply_text .= "Image: $image_path\n";
+            }
+            
             file_put_contents($reply_file, $reply_text);
             $_SESSION[$rate_key] = $now;
             header("Location: " . $_SERVER['PHP_SELF']);
@@ -293,28 +351,48 @@ if (isset($_POST['delete_reply']) && isset($_POST['delete_reply_ts'])) {
   </div>
   <!-- REPLIES SECTION -->
   <div class="replies_section" style="width:100%;margin:1em 0 0 0;padding:0;">
-    <b>Replies:</b><br>
+  <br>
     <?php foreach ($recent_replies as $rf):
       $reply = file($rf, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-      $reply_user = $reply_time = $reply_content = '';
+      $reply_user = $reply_time = $reply_content = $reply_image = '';
       foreach ($reply as $line) {
         if (stripos($line, 'User:') === 0) $reply_user = trim(substr($line, 5));
         elseif (stripos($line, 'Time:') === 0) $reply_time = trim(substr($line, 5));
         elseif (stripos($line, 'Content:') === 0) $reply_content = trim(substr($line, 8));
+        elseif (stripos($line, 'Image:') === 0) $reply_image = trim(substr($line, 6));
       }
       $dt = $reply_time ? date('Y/m/d H:i', $reply_time) : '';
+      
+      // File info for reply image
+      $file_info = '';
+      if ($reply_image && file_exists($blog_dir . '/' . $reply_image)) {
+          $fsize = filesize($blog_dir . '/' . $reply_image);
+          $mb = round($fsize / 1048576, 2);
+          $ext = strtolower(pathinfo($reply_image, PATHINFO_EXTENSION));
+          $mime_map = [
+              'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
+              'gif' => 'image/gif', 'webm' => 'video/webm', 'mp4' => 'video/mp4',
+          ];
+          $mime = isset($mime_map[$ext]) ? $mime_map[$ext] : 'application/octet-stream';
+          $file_info = basename($reply_image) . " ({$mb}MB, $mime)";
+      }
     ?>
       <div style="border-left:2px solid #ccc;padding-left:1em;margin-bottom:0.5em;max-width:100%;word-break:break-word;">
-        <span style="color:#789922;">[<?= htmlspecialchars($reply_user) ?>]</span>
-        <span style="color:#aaa;"> <?= htmlspecialchars($dt) ?></span><br>
-        <?= format_post($reply_content) ?>
-        <?php if (isset($_SESSION['user']) && ($_SESSION['user'] === $blog_name || $_SESSION['user'] === 'admin')): ?>
-          <form method="post" style="border:unset; background-color: unset;">
-            <input type="hidden" name="delete_reply" value="<?= htmlspecialchars(basename($rf)) ?>">
-            <input type="hidden" name="delete_reply_ts" value="<?= htmlspecialchars($ts) ?>">
-            <button type="submit" onclick="return confirm('Delete this reply?');">Delete</button>
-          </form>
-        <?php endif; ?>
+        <div class="post_meta" style="font-size:0.9em;">
+          <span style="color:#789922;">[<?= htmlspecialchars($reply_user) ?>]</span>
+          <?= htmlspecialchars($dt) ?><br>
+          <?php if ($reply_image): ?>
+          file: <a href="blog/<?= htmlspecialchars($blog_name) ?>/<?= htmlspecialchars($reply_image) ?>"><?= htmlspecialchars(basename($reply_image)) ?></a>
+          (<?= htmlspecialchars($mb) ?>MB, <?= htmlspecialchars($mime) ?>)<br>
+          <?php endif; ?>
+          
+        </div>
+        <div class="post_content">
+          <?php if ($reply_image && file_exists($blog_dir . '/' . $reply_image)): ?>
+            <img class="thumbnail float-image" src="blog/<?= htmlspecialchars($blog_name) ?>/<?= htmlspecialchars($reply_image) ?>" />
+          <?php endif; ?>
+          <?= format_post($reply_content) ?>
+        </div>
       </div>
     <?php endforeach; ?>
     <?php if ($more_replies): ?>
@@ -322,10 +400,13 @@ if (isset($_POST['delete_reply']) && isset($_POST['delete_reply_ts'])) {
     <?php endif; ?>
     <!-- Reply button and form -->
     <button type="button" onclick="document.getElementById('replyform_<?= $ts ?>').style.display='block';this.style.display='none';" style="margin-top:0.5em;">Reply</button>
-    <form id="replyform_<?= $ts ?>" method="post" style="display:none;margin-top:0.5em;width:80%;">
+    <form id="replyform_<?= $ts ?>" method="post" enctype="multipart/form-data" style="display:none;margin-top:0.5em;width:80%;">
       <?php if (!empty($reply_error)): ?><div style="color:red;"> <?= htmlspecialchars($reply_error) ?> </div><?php endif; ?>
       <input type="hidden" name="reply_to" value="<?= htmlspecialchars($ts) ?>">
       <textarea name="reply_content" rows="2" style="width:98%;max-width:100%;box-sizing:border-box;resize:vertical;" maxlength="2000" required placeholder="Write a reply... (max 2000 chars)"></textarea><br>
+      <?php if (isset($_SESSION['user'])): ?>
+        <label>Image: <input type="file" name="reply_image" accept="image/*,video/*"></label><br>
+      <?php endif; ?>
       <label>Captcha: <b><?= htmlspecialchars($captcha[0]) ?> + <?= htmlspecialchars($captcha[1]) ?> = ?</b>
         <input type="text" name="reply_captcha" required style="width:40px;">
       </label>
