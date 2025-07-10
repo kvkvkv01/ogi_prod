@@ -71,11 +71,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             file_put_contents($users_file, $user_line . "\n", FILE_APPEND);
         }
-        // Create blog folder
+        // Create blog folder with proper permissions
         $blog_dir = __DIR__ . '/blog/' . $username;
         mkdir($blog_dir, 0777, true);
         mkdir($blog_dir . '/posts', 0777, true);
         mkdir($blog_dir . '/uploads', 0777, true);
+        
+        // Ensure proper permissions are set
+        chmod($blog_dir, 0777);
+        chmod($blog_dir . '/posts', 0777);
+        chmod($blog_dir . '/uploads', 0777);
         // Write header
         file_put_contents($blog_dir . '/header.txt', "Title: $blogname\nDescription: $blogdesc\n");
         // Create index.php for the blog
