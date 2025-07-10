@@ -62,6 +62,12 @@ krsort($posts);
     <?php if (file_exists($blog_dir . '/custom.css')): ?>
       <link rel="stylesheet" type="text/css" href="custom.css?v=<?= filemtime($blog_dir . '/custom.css') ?>" />
     <?php endif; ?>
+    <style>
+      .reply-btn {
+        border: none !important;
+        background-color: unset;
+      }
+    </style>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script>
@@ -288,10 +294,10 @@ foreach ($posts as $ts => $content):
           <span style="color:#aaa;"> <?= htmlspecialchars($dt) ?></span><br>
           <?= htmlspecialchars($reply_content) ?>
           <?php if (isset($_SESSION['user']) && ($_SESSION['user'] === basename($blog_dir) || $_SESSION['user'] === 'admin')): ?>
-            <form method="post">
+            <form method="post" style="display:inline;">
               <input type="hidden" name="delete_reply" value="<?= htmlspecialchars(basename($rf)) ?>">
               <input type="hidden" name="delete_reply_ts" value="<?= htmlspecialchars($ts) ?>">
-              <button type="submit" onclick="return confirm('Delete this reply?');" style="color:#c22;font-size:0.9em;border:none;background:none;padding:0;">Delete</button>
+              <button type="submit" class="reply-btn" onclick="return confirm('Delete this reply?');">Delete</button>
             </form>
           <?php endif; ?>
         </div>
@@ -300,7 +306,7 @@ foreach ($posts as $ts => $content):
         <a href="thread.php?post=<?= urlencode($ts) ?>">open thread (<?= count($reply_files) ?> replies)</a>
       <?php endif; ?>
       <!-- Reply button and form -->
-      <button type="button" onclick="document.getElementById('replyform_<?= $ts ?>').style.display='block';this.style.display='none';" style="margin-top:0.5em;">Reply</button>
+      <button type="button" class="reply-btn" onclick="document.getElementById('replyform_<?= $ts ?>').style.display='block';this.style.display='none';">Reply</button>
       <form id="replyform_<?= $ts ?>" method="post" style="display:none;margin-top:0.5em;width:80%;">
         <?php if (!empty($reply_error)): ?><div style="color:red;"> <?= htmlspecialchars($reply_error) ?> </div><?php endif; ?>
         <input type="hidden" name="reply_to" value="<?= htmlspecialchars($ts) ?>">
@@ -309,7 +315,7 @@ foreach ($posts as $ts => $content):
           <input type="text" name="reply_captcha" required style="width:40px;">
         </label>
         <input type="hidden" name="reply_captcha_answer" value="<?= htmlspecialchars($captcha[2]) ?>">
-        <button type="submit" style="margin-top:0.2em;">Reply</button>
+        <button type="submit" class="reply-btn">Reply</button>
       </form>
     </div>
   </div>
