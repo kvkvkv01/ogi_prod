@@ -3,13 +3,6 @@ users.txt
 invites.txt
 used_invites.txt
 
-# Blog posts and user-generated content
-blog/*/posts/
-blog/*/uploads/
-
-# Blog configuration files (may contain sensitive data)
-blog/*/header.txt
-
 # Session files
 sess_*
 

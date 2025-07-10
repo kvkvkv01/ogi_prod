@@ -1,0 +1,15 @@
+Title: Devlog
+Image: uploads/1752088499_686ebfb30559e.png
+Content:
+>test
+>greentext
+<lol
+
+here is some code snippet
+[code]
+<?php
+$is_logged = isset($_SESSION['user']);
+$is_owner = $is_logged && ($_SESSION['user'] === basename($blog_dir));
+$is_admin = $is_logged && ($_SESSION['user'] === 'admin');
+?>
+[/code]
