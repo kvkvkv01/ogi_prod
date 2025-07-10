@@ -1,0 +1,41 @@
+# Sensitive user data files
+users.txt
+invites.txt
+used_invites.txt
+
+# Blog posts and user-generated content
+blog/*/posts/
+blog/*/uploads/
+
+# Blog configuration files (may contain sensitive data)
+blog/*/header.txt
+
+# Session files
+sess_*
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+*~ 
