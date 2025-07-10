@@ -10,9 +10,9 @@ if (is_dir($blog_dir)) {
             $blog_data = [
                 'name' => $name,
                 'title' => $name,
-                'started' => 'Unknown',
                 'posts' => 0,
-                'images' => 0
+                'images' => 0,
+                'replies' => 0
             ];
             
             // Get blog title from header.txt
@@ -46,16 +46,15 @@ if (is_dir($blog_dir)) {
                 }
             }
             
-            // Get start date from folder creation
-            $blog_data['started'] = 'Unknown';
-            if (is_dir($dir)) {
-                $stat = stat($dir);
-                if ($stat) {
-                    $dt = new DateTime("@".$stat['ctime']);
-                    $dt->setTimezone(new DateTimeZone("Asia/Tokyo"));
-                    $blog_data['started'] = $dt->format('Y/m/d');
+            // Count replies
+            $replies_dir = $dir . '/replies';
+            $reply_count = 0;
+            if (is_dir($replies_dir)) {
+                foreach (glob($replies_dir . '/*', GLOB_ONLYDIR) as $post_replies) {
+                    $reply_count += count(glob($post_replies . '/*_reply.txt'));
                 }
             }
+            $blog_data['replies'] = $reply_count;
             
             $blogs[] = $blog_data;
         }
@@ -136,18 +135,18 @@ if (is_dir($blog_dir)) {
         <thead>
             <tr>
                 <th>Title</th>
-                <th>Started</th>
                 <th>Posts</th>
                 <th>Images</th>
+                <th>Replies</th>
             </tr>
         </thead>
         <tbody>
             <?php foreach ($blogs as $blog): ?>
                 <tr>
                     <td><a href="blog/<?= htmlspecialchars($blog['name']) ?>/index.php"><?= htmlspecialchars($blog['title']) ?></a></td>
-                    <td><?= htmlspecialchars($blog['started']) ?></td>
                     <td><?= htmlspecialchars($blog['posts']) ?></td>
                     <td><?= htmlspecialchars($blog['images']) ?></td>
+                    <td><?= htmlspecialchars($blog['replies']) ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>

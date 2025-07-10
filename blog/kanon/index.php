@@ -45,13 +45,27 @@ if (file_exists($header_file)) {
 
 // Load posts (timestamp_post.txt)
 $posts = [];
+$post_sort_keys = [];
 foreach (glob($posts_dir . '/*_post.txt') as $file) {
     $timestamp = basename($file, '_post.txt');
     $content = file_get_contents($file);
+    // Find most recent reply timestamp
+    $replies_dir = $blog_dir . '/replies/' . $timestamp;
+    $latest_reply = 0;
+    if (is_dir($replies_dir)) {
+        $reply_files = glob($replies_dir . '/*_reply.txt');
+        foreach ($reply_files as $rf) {
+            $rf_time = (int)basename($rf, '_reply.txt');
+            if ($rf_time > $latest_reply) $latest_reply = $rf_time;
+        }
+    }
+    $sort_key = $latest_reply > 0 ? $latest_reply : (int)$timestamp;
     $posts[$timestamp] = $content;
+    $post_sort_keys[$timestamp] = $sort_key;
 }
-// Sort by timestamp descending
-krsort($posts);
+// Sort by most recent reply (or post time) descending
+arsort($post_sort_keys);
+$posts = array_replace(array_flip(array_keys($post_sort_keys)), $posts);
 ?>
 <!DOCTYPE html>
 <html lang="en">
