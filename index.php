@@ -115,7 +115,8 @@ if (is_dir($blog_dir)) {
             <a href="add_user.php" style="color:#4e5053;text-decoration:none;font-size:1em;">add user</a>
         <?php endif; ?>
     <?php else: ?>
-        <a href="login.php" style="color:#4e5053;text-decoration:none;font-size:1em;">login</a>
+        <a href="login.php" style="color:#4e5053;text-decoration:none;font-size:1em;">login</a> |
+        <a href="register.php" style="color:#4e5053;text-decoration:none;font-size:1em;">register</a>
     <?php endif; ?>
 </div>
 
