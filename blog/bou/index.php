@@ -190,6 +190,28 @@ foreach ($posts as $ts => $content):
         $is_admin = ($_SESSION['user'] === 'admin');
         if ($is_owner || $is_admin) $can_delete = true;
     }
+
+    // --- REPLIES LOGIC ---
+    $replies_dir = $blog_dir . '/replies/' . $ts;
+    if (!is_dir($replies_dir)) mkdir($replies_dir, 0777, true);
+    $reply_files = glob($replies_dir . '/*_reply.txt');
+    usort($reply_files, function($a, $b) { return filemtime($a) <=> filemtime($b); });
+    $recent_replies = array_slice($reply_files, -3);
+    $more_replies = count($reply_files) > 3;
+    // Handle reply submission
+    if (isset($_POST['reply_to']) && $_POST['reply_to'] == $ts && isset($_POST['reply_content'])) {
+        $reply_content = trim($_POST['reply_content']);
+        if ($reply_content !== '') {
+            $reply_user = isset($_SESSION['user']) ? $_SESSION['user'] : 'VIPPER';
+            $reply_time = time();
+            $reply_file = $replies_dir . '/' . $reply_time . '_reply.txt';
+            $reply_text = "User: $reply_user\nTime: $reply_time\nContent: " . str_replace("\n", " ", $reply_content) . "\n";
+            file_put_contents($reply_file, $reply_text);
+            // Refresh to avoid resubmission
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit;
+        }
+    }
 ?>
 <div id='post'>
   <div class="post_meta">
@@ -211,6 +233,35 @@ foreach ($posts as $ts => $content):
     <?php endif; ?>
     <b><?= htmlspecialchars($title) ?></b><br>
     <p><?= format_post($body) ?></p>
+    </div>
+    <!-- REPLIES SECTION -->
+    <div class="replies_section" style="margin-left:2em;">
+      <b>Replies:</b><br>
+      <?php foreach ($recent_replies as $rf):
+        $reply = file($rf, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        $reply_user = $reply_time = $reply_content = '';
+        foreach ($reply as $line) {
+          if (stripos($line, 'User:') === 0) $reply_user = trim(substr($line, 5));
+          elseif (stripos($line, 'Time:') === 0) $reply_time = trim(substr($line, 5));
+          elseif (stripos($line, 'Content:') === 0) $reply_content = trim(substr($line, 8));
+        }
+        $dt = $reply_time ? date('Y/m/d H:i', $reply_time) : '';
+      ?>
+        <div style="border-left:2px solid #ccc;padding-left:1em;margin-bottom:0.5em;">
+          <span style="color:#789922;">[<?= htmlspecialchars($reply_user) ?>]</span>
+          <span style="color:#aaa;"><?= htmlspecialchars($dt) ?></span><br>
+          <?= htmlspecialchars($reply_content) ?>
+        </div>
+      <?php endforeach; ?>
+      <?php if ($more_replies): ?>
+        <a href="thread.php?post=<?= urlencode($ts) ?>">open thread (<?= count($reply_files) ?> replies)</a>
+      <?php endif; ?>
+      <!-- Reply form -->
+      <form method="post" style="margin-top:0.5em;">
+        <input type="hidden" name="reply_to" value="<?= htmlspecialchars($ts) ?>">
+        <textarea name="reply_content" rows="2" cols="40" required placeholder="Write a reply..."></textarea><br>
+        <button type="submit">Reply</button>
+      </form>
     </div>
   </div>
 </div>
