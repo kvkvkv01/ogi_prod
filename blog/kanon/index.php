@@ -4,6 +4,11 @@ $blog_dir = __DIR__;
 $posts_dir = $blog_dir . '/posts';
 if (!is_dir($posts_dir)) mkdir($posts_dir);
 
+// Pagination settings
+$posts_per_page = 10;
+$current_page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+$offset = ($current_page - 1) * $posts_per_page;
+
 // Handle post deletion BEFORE any output
 if (isset($_SESSION['user'], $_POST['delete_post'])) {
     $del_ts = preg_replace('/[^0-9]/', '', $_POST['delete_post']);
@@ -66,6 +71,16 @@ foreach (glob($posts_dir . '/*_post.txt') as $file) {
 // Sort by most recent reply (or post time) descending
 arsort($post_sort_keys);
 $posts = array_replace(array_flip(array_keys($post_sort_keys)), $posts);
+
+// Calculate pagination
+$total_posts = count($posts);
+$total_pages = ceil($total_posts / $posts_per_page);
+$current_page = min($current_page, $total_pages);
+$current_page = max(1, $current_page);
+$offset = ($current_page - 1) * $posts_per_page;
+
+// Get posts for current page
+$current_posts = array_slice($posts, $offset, $posts_per_page, true);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -205,7 +220,7 @@ if (!function_exists('format_post')) {
   }
 }
 
-foreach ($posts as $ts => $content):
+foreach ($current_posts as $ts => $content):
     // Parse post file
     $lines = explode("\n", $content);
     $title = $img = $body = '';
@@ -432,6 +447,19 @@ foreach ($posts as $ts => $content):
   </div>
 </div>
 <?php endforeach; ?>
+<?php endif; ?>
+
+<!-- Pagination -->
+<?php if ($total_pages > 1): ?>
+<div style="text-align: center; margin: 30px 0; font-family: monospace;">
+  <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+    <?php if ($i == $current_page): ?>
+      <span style="background: #4e5053; color: white; padding: 5px 8px; margin: 0 2px;">[<?= str_pad($i, 2, '0', STR_PAD_LEFT) ?>]</span>
+    <?php else: ?>
+      <a href="?page=<?= $i ?>" style="background: #f0f0f0; color: #4e5053; padding: 5px 8px; margin: 0 2px; text-decoration: none;">[<?= str_pad($i, 2, '0', STR_PAD_LEFT) ?>]</a>
+    <?php endif; ?>
+  <?php endfor; ?>
+</div>
 <?php endif; ?>
 <style>
 .spoiler {

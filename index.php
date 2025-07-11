@@ -134,7 +134,7 @@ usort($blogs, function($a, $b) {
 <div style="font-size: 14px !important; width: 555px; background-color: white; color: #4e5053; border: solid 2px #4e5053; margin-left: auto; margin-right: auto; padding: 1em; margin-bottom: 10px;">
     <h1 style="font-size: inherit !important; width: auto !important; background-color: transparent !important; color: inherit !important; border: none !important; margin: 0 !important; padding: 0 !important; margin-bottom: 0 !important;">Welcome<?php if (isset($_SESSION['user'])) echo ', ' . htmlspecialchars($_SESSION['user']); ?>!</h1>
     <p style="text-align: left; margin: 20px 0; color: #4e5053; font-size: 1em;">
-    Samefagging is a minimalist social-media-as-imageboard platform where users can create and manage their own personal threads. Each blog supports text posts with optional image uploads, featuring a clean, imageboard-inspired design. Due to safety concerns, replies are text-only at least for the moment.</p>
+    Samefagging is a minimalist social-media-as-imageboard platform where users can create and manage their own personal threads. Each blog supports text posts with optional image uploads, featuring a clean, imageboard-inspired design. Due to safety concerns. For the moment, replies are text-only for anons.</p>
 </div>
 
 <h2>Blogs</h2>

@@ -1,43 +1,63 @@
 <?php
 session_start();
 
-// Load all posts from all blogs
-$all_posts = [];
-$blog_root = __DIR__ . '/blog';
+// Pagination settings
+$posts_per_page = 10;
+$current_page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
+$offset = ($current_page - 1) * $posts_per_page;
 
-if (is_dir($blog_root)) {
-    foreach (glob($blog_root . '/*', GLOB_ONLYDIR) as $blog_dir) {
-        $blog_name = basename($blog_dir);
-        if ($blog_name[0] === '.') continue;
+// Load all blogs
+$blog_root = __DIR__ . '/blog';
+$blogs = glob($blog_root . '/*', GLOB_ONLYDIR);
+$all_posts = [];
+
+foreach ($blogs as $blog) {
+    $blog_name = basename($blog);
+    $posts_dir = $blog . '/posts';
+    if (!is_dir($posts_dir)) continue;
+    
+    foreach (glob($posts_dir . '/*_post.txt') as $file) {
+        $timestamp = basename($file, '_post.txt');
+        $content = file_get_contents($file);
         
-        $posts_dir = $blog_dir . '/posts';
-        if (!is_dir($posts_dir)) continue;
-        
-        foreach (glob($posts_dir . '/*_post.txt') as $file) {
-            $timestamp = basename($file, '_post.txt');
-            $content = file_get_contents($file);
-            
-            // Find most recent reply timestamp
-            $replies_dir = $blog_dir . '/replies/' . $timestamp;
-            $latest_reply = 0;
-            if (is_dir($replies_dir)) {
-                $reply_files = glob($replies_dir . '/*_reply.txt');
-                foreach ($reply_files as $rf) {
-                    $rf_time = (int)basename($rf, '_reply.txt');
-                    if ($rf_time > $latest_reply) $latest_reply = $rf_time;
-                }
+        // Parse post file
+        $lines = explode("\n", $content);
+        $title = $img = $body = '';
+        $in_content = false;
+        foreach ($lines as $line) {
+            if (stripos($line, 'Title:') === 0) {
+                $title = trim(substr($line, 6));
+            } elseif (stripos($line, 'Image:') === 0) {
+                $img = trim(substr($line, 6));
+            } elseif (stripos($line, 'Content:') === 0) {
+                $in_content = true;
+            } elseif ($in_content) {
+                $body .= $line . "\n";
             }
-            
-            $sort_key = $latest_reply > 0 ? $latest_reply : (int)$timestamp;
-            
-            $all_posts[] = [
-                'blog_name' => $blog_name,
-                'blog_dir' => $blog_dir,
-                'timestamp' => $timestamp,
-                'content' => $content,
-                'sort_key' => $sort_key
-            ];
         }
+        $body = trim($body);
+        
+        // Find most recent reply timestamp
+        $replies_dir = $blog . '/replies/' . $timestamp;
+        $latest_reply = 0;
+        if (is_dir($replies_dir)) {
+            $reply_files = glob($replies_dir . '/*_reply.txt');
+            foreach ($reply_files as $rf) {
+                $rf_time = (int)basename($rf, '_reply.txt');
+                if ($rf_time > $latest_reply) $latest_reply = $rf_time;
+            }
+        }
+        $sort_key = $latest_reply > 0 ? $latest_reply : (int)$timestamp;
+        
+        $all_posts[] = [
+            'timestamp' => $timestamp,
+            'title' => $title,
+            'body' => $body,
+            'img' => $img,
+            'blog_name' => $blog_name,
+            'blog_dir' => $blog,
+            'sort_key' => $sort_key
+        ];
     }
 }
 
@@ -45,6 +65,16 @@ if (is_dir($blog_root)) {
 usort($all_posts, function($a, $b) {
     return $b['sort_key'] <=> $a['sort_key'];
 });
+
+// Calculate pagination
+$total_posts = count($all_posts);
+$total_pages = ceil($total_posts / $posts_per_page);
+$current_page = min($current_page, $total_pages);
+$current_page = max(1, $current_page);
+$offset = ($current_page - 1) * $posts_per_page;
+
+// Get posts for current page
+$current_posts = array_slice($all_posts, $offset, $posts_per_page);
 
 // Formatting function (reuse from blog index)
 if (!function_exists('format_post')) {
@@ -274,29 +304,12 @@ if (isset($_POST['delete_reply']) && isset($_POST['delete_reply_ts'])) {
 <?php if (empty($all_posts)): ?>
     <p>No posts yet.</p>
 <?php else: ?>
-<?php foreach ($all_posts as $post):
+<?php foreach ($current_posts as $post):
     $blog_name = $post['blog_name'];
     $blog_dir = $post['blog_dir'];
     $ts = $post['timestamp'];
-    $content = $post['content'];
+    $content = $post['body']; // Use $post['body'] for the content
     
-    // Parse post file
-    $lines = explode("\n", $content);
-    $title = $img = $body = '';
-    $in_content = false;
-    foreach ($lines as $line) {
-        if (stripos($line, 'Title:') === 0) {
-            $title = trim(substr($line, 6));
-        } elseif (stripos($line, 'Image:') === 0) {
-            $img = trim(substr($line, 6));
-        } elseif (stripos($line, 'Content:') === 0) {
-            $in_content = true;
-        } elseif ($in_content) {
-            $body .= $line . "\n";
-        }
-    }
-    $body = trim($body);
-
     // Date/time formatting
     $dt = new DateTime("@".$ts);
     $dt->setTimezone(new DateTimeZone("Asia/Tokyo"));
@@ -306,16 +319,16 @@ if (isset($_POST['delete_reply']) && isset($_POST['delete_reply_ts'])) {
 
     // File info
     $file_info = '';
-    if ($img && file_exists($blog_dir . '/' . $img)) {
-        $fsize = filesize($blog_dir . '/' . $img);
+    if ($post['img'] && file_exists($blog_dir . '/' . $post['img'])) {
+        $fsize = filesize($blog_dir . '/' . $post['img']);
         $mb = round($fsize / 1048576, 2);
-        $ext = strtolower(pathinfo($img, PATHINFO_EXTENSION));
+        $ext = strtolower(pathinfo($post['img'], PATHINFO_EXTENSION));
         $mime_map = [
             'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png',
             'gif' => 'image/gif', 'webm' => 'video/webm', 'mp4' => 'video/mp4',
         ];
         $mime = isset($mime_map[$ext]) ? $mime_map[$ext] : 'application/octet-stream';
-        $file_info = basename($img) . " ({$mb}MB, $mime)";
+        $file_info = basename($post['img']) . " ({$mb}MB, $mime)";
     }
 
     // Replies logic
@@ -337,17 +350,17 @@ if (isset($_POST['delete_reply']) && isset($_POST['delete_reply_ts'])) {
   <div class="post_meta">
     <span style="color:#789922;">[<?= htmlspecialchars($blog_name) ?>]</span>
     <?= htmlspecialchars($date_str) ?> No.<?= htmlspecialchars($ts) ?><br>
-    <?php if ($img): ?>
-    file: <a href="blog/<?= htmlspecialchars($blog_name) ?>/<?= htmlspecialchars($img) ?>"><?= htmlspecialchars(basename($img)) ?></a>
+    <?php if ($post['img']): ?>
+    file: <a href="blog/<?= htmlspecialchars($blog_name) ?>/<?= htmlspecialchars($post['img']) ?>"><?= htmlspecialchars(basename($post['img'])) ?></a>
     (<?= htmlspecialchars($mb) ?>MB, <?= htmlspecialchars($mime) ?>)<br>
     <?php endif; ?>
   </div>
   <div class="post_content">
-    <?php if ($img): ?>
-    <img class="thumbnail float-image" src="blog/<?= htmlspecialchars($blog_name) ?>/<?= htmlspecialchars($img) ?>" />
+    <?php if ($post['img']): ?>
+    <img class="thumbnail float-image" src="blog/<?= htmlspecialchars($blog_name) ?>/<?= htmlspecialchars($post['img']) ?>" />
     <?php endif; ?>
-    <b><?= htmlspecialchars($title) ?></b><br>
-    <p><?= format_post($body) ?></p>
+    <b><?= htmlspecialchars($post['title']) ?></b><br>
+    <p><?= format_post($content) ?></p>
   </div>
   <!-- REPLIES SECTION -->
   <div class="replies_section" style="width:100%;margin:1em 0 0 0;padding:0;">
@@ -413,9 +426,22 @@ if (isset($_POST['delete_reply']) && isset($_POST['delete_reply_ts'])) {
       <input type="hidden" name="reply_captcha_answer" value="<?= htmlspecialchars($captcha[2]) ?>">
       <button type="submit" style="margin-top:0.2em;">Reply</button>
     </form>
+      </div>
   </div>
-</div>
 <?php endforeach; ?>
+<?php endif; ?>
+
+<!-- Pagination -->
+<?php if ($total_pages > 1): ?>
+<div style="text-align: center; margin: 30px 0; font-family: monospace;">
+  <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+    <?php if ($i == $current_page): ?>
+      <span style="background: #4e5053; color: white; padding: 5px 8px; margin: 0 2px;">[<?= str_pad($i, 2, '0', STR_PAD_LEFT) ?>]</span>
+    <?php else: ?>
+      <a href="?page=<?= $i ?>" style="background: #f0f0f0; color: #4e5053; padding: 5px 8px; margin: 0 2px; text-decoration: none;">[<?= str_pad($i, 2, '0', STR_PAD_LEFT) ?>]</a>
+    <?php endif; ?>
+  <?php endfor; ?>
+</div>
 <?php endif; ?>
 <style>
 .spoiler {
