@@ -120,8 +120,8 @@ async def handler(websocket):
             await broadcast(payload)
 
 async def main():
-    async with websockets.serve(handler, "0.0.0.0", 80):
-        print("Chat server running on ws://0.0.0.0:80")
+    async with websockets.serve(handler, "0.0.0.0", 8765):
+        print("Chat server running on ws://0.0.0.0:8765")
         await asyncio.Future()  # run forever
 
 if __name__ == "__main__":
