@@ -46,7 +46,8 @@ if (is_dir($blog_dir) && file_exists($blog_dir . '/custom.css')) {
 <script>
 const username = <?= json_encode($username) ?>;
 const token = <?= json_encode($token) ?>;
-const ws = new WebSocket('ws://' + location.hostname + ':8765');
+const wsProto = location.protocol === 'https:' ? 'wss://' : 'ws://';
+const ws = new WebSocket(wsProto + location.host + '/');
 const messages = document.getElementById('messages');
 const input = document.getElementById('input');
 let liveTexts = {};
