@@ -124,11 +124,13 @@ usort($blogs, function($a, $b) {
         <?php if ($_SESSION['user'] === 'admin'): ?> |
             <a href="add_user.php" style="color:#4e5053;text-decoration:none;font-size:1em;">add user</a>
         <?php endif; ?>
+        | <a href="timeline.php" style="color:#4e5053;text-decoration:none;font-size:1em;">timeline</a>
+        | <a href="chat.php" style="color:#4e5053;text-decoration:none;font-size:1em;">chat</a>
     <?php else: ?>
         <a href="login.php" style="color:#4e5053;text-decoration:none;font-size:1em;">login</a> |
         <a href="register.php" style="color:#4e5053;text-decoration:none;font-size:1em;">register</a>
+        | <a href="timeline.php" style="color:#4e5053;text-decoration:none;font-size:1em;">timeline</a>
     <?php endif; ?>
-    | <a href="timeline.php" style="color:#4e5053;text-decoration:none;font-size:1em;">timeline</a>
 </div>
 
 <div style="font-size: 14px !important; width: 555px; background-color: white; color: #4e5053; border: solid 2px #4e5053; margin-left: auto; margin-right: auto; padding: 1em; margin-bottom: 10px;">
