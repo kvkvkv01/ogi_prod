@@ -87,3 +87,119 @@ pre.post_code {
   border: 1px solid #ccc;
   font-family: monospace;
 }
+
+/* Chat-specific styles */
+body {
+  font-family: monospace;
+  background: #fff;
+  color: #222;
+}
+#chatbox {
+  width: 70%;
+  max-width: 600px;
+  margin: 40px 0 0 0;
+  border: 1px solid #ccc;
+  border-radius: 0;
+  padding: 0.5em 1em 1em 1em;
+  background: #fafafa;
+  float: left;
+}
+#userlist {
+  width: 25%;
+  min-width: 120px;
+  max-width: 200px;
+  float: right;
+  margin: 40px 2% 0 0;
+  border: 1px solid #ccc;
+  border-radius: 0;
+  background: #fafafa;
+  padding: 0.5em 1em;
+}
+#userlist h3 {
+  margin-top: 0;
+  font-size: 1em;
+}
+#messages {
+  height: 300px;
+  overflow-y: auto;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 0.5em;
+  padding-bottom: 0.5em;
+  border-radius: 0;
+}
+.msg {
+  margin: 0.2em 0;
+  border-radius: 0;
+}
+.msg .user {
+  color: #789922;
+  font-weight: bold;
+}
+.msg .me {
+  color: #4e5053;
+  font-weight: bold;
+}
+#typing {
+  color: #aaa;
+  font-size: 0.9em;
+  margin-top: 0.2em;
+}
+#input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 1em;
+  padding: 0.3em;
+  border-radius: 0;
+  border: 1px solid #ccc;
+  margin-top: 0.5em;
+}
+#send {
+  display: none;
+}
+.spoiler {
+  background: #222;
+  color: #222;
+  border-radius: 0;
+  padding: 0 2px;
+  cursor: pointer;
+}
+.spoiler:hover, .spoiler:active {
+  color: #fff;
+  transition: color 0.2s;
+}
+
+/* Responsive chat layout for small screens */
+@media (max-width: 800px) {
+  #chatbox, #userlist {
+    float: none;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 0 10px 0;
+    box-sizing: border-box;
+  }
+  #userlist {
+    margin-top: 0;
+    margin-right: 0;
+    padding-top: 0.5em;
+  }
+  #messages {
+    height: 200px;
+    font-size: 1em;
+  }
+  #input {
+    font-size: 1.1em;
+  }
+}
+
+@media (max-width: 500px) {
+  #messages {
+    height: 120px;
+    font-size: 0.95em;
+  }
+  #input {
+    font-size: 1em;
+  }
+  #chatbox, #userlist {
+    padding: 0.5em 0.5em;
+  }
+}
