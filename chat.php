@@ -46,12 +46,6 @@ if (is_dir($blog_dir) && file_exists($blog_dir . '/custom.css')) {
 <script>
 const username = <?= json_encode($username) ?>;
 const token = <?= json_encode($token) ?>;
-const wsProto = location.protocol === 'https:' ? 'wss://' : 'ws://';
-const ws = new WebSocket(wsProto + location.host + '/');
-const messages = document.getElementById('messages');
-const input = document.getElementById('input');
-let liveTexts = {};
-let users = [];
 
 function escapeHTML(str) {
     return str.replace(/[&<>"']/g, function(tag) {
@@ -128,34 +122,57 @@ function updateUserList() {
         ul.appendChild(li);
     });
 }
-ws.onopen = () => {
-    ws.send(JSON.stringify({type: 'auth', username, token}));
-};
-ws.onmessage = (event) => {
-    let data;
-    try { data = JSON.parse(event.data); } catch { return; }
-    if (data.type === 'auth_ok') {
-        messages.innerHTML = '';
-    } else if (data.type === 'message') {
-        addMessage(data.username, data.text, data.username === username, data.ts);
-        liveTexts[data.username] = '';
-        updateLiveMessages();
-    } else if (data.type === 'rtt') {
-        liveTexts[data.username] = data.text;
-        updateLiveMessages();
-    } else if (data.type === 'userlist') {
-        users = data.users;
-        updateUserList();
-    }
-};
+
+function setupWebSocket() {
+    const wsProto = location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const ws = new WebSocket(wsProto + location.host + '/');
+
+    ws.onopen = () => {
+        ws.send(JSON.stringify({type: 'auth', username, token}));
+    };
+    ws.onmessage = (event) => {
+        let data;
+        try { data = JSON.parse(event.data); } catch { return; }
+        if (data.type === 'auth_ok') {
+            messages.innerHTML = '';
+        } else if (data.type === 'message') {
+            addMessage(data.username, data.text, data.username === username, data.ts);
+            liveTexts[data.username] = '';
+            updateLiveMessages();
+        } else if (data.type === 'rtt') {
+            liveTexts[data.username] = data.text;
+            updateLiveMessages();
+        } else if (data.type === 'userlist') {
+            users = data.users;
+            updateUserList();
+        }
+    };
+    ws.onclose = () => {
+        alert('WebSocket connection closed. Trying to reconnect in 3 seconds...');
+        setTimeout(() => {
+            window.location.reload(); // Simple reload for now
+        }, 3000);
+    };
+    return ws;
+}
+
+let ws = setupWebSocket();
+
+const messages = document.getElementById('messages');
+const input = document.getElementById('input');
+let liveTexts = {};
+let users = [];
+
 input.addEventListener('input', () => {
     liveTexts[username] = input.value;
     updateLiveMessages();
-    ws.send(JSON.stringify({type: 'rtt', text: input.value}));
+    if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({type: 'rtt', text: input.value}));
+    }
 });
 document.getElementById('chatform').addEventListener('submit', () => {
     const text = input.value.trim();
-    if (text) {
+    if (text && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({type: 'message', text}));
         input.value = '';
         liveTexts[username] = '';
