@@ -9,6 +9,10 @@ img {
   border: solid 2px #4e5053;
 }
 
+a{
+  word-break: break-all;
+}
+
 h1, h2, #post, form {
   font-size: 14px !important;
   width: 555px;
